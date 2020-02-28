@@ -13,6 +13,7 @@
     "express": "^4.15.2",
     "paper-jsdom": "^0.12.4",
     "sketchrnn": "^0.1.1",
-    "socket.io": "^2.3.0"
+    "socket.io": "^2.3.0",
+	"static-eval": ">=2.0.0"
   }
 }
