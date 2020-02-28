@@ -1,0 +1,18 @@
+{
+  "name": "montagsmalerbackend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "argparse": "^1.0.10",
+    "express": "^4.15.2",
+    "paper-jsdom": "^0.12.4",
+    "sketchrnn": "^0.1.1",
+    "socket.io": "^2.3.0"
+  }
+}
