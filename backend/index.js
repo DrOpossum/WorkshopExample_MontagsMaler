@@ -15,9 +15,12 @@ var io = require('socket.io').listen(app);
 
 // --- Server Setup --- //
 
+let c = 0;
 
 io.on('connection', function(socket){
   console.log('a user connected');
+
+  c = 0;
 
   socket.emit("nice");
 
@@ -25,7 +28,17 @@ io.on('connection', function(socket){
     console.log('user disconnected');
   });
 
-  outputDrawStream(socket);
+  socket.on('userPath', function(data){
+    console.log("UserPath", data, c++)
+    io.emit('userPath', data)
+  });
+
+  socket.on('userStart', function(data){
+    console.log("userStart", data)
+    io.emit('userStart', data)
+  });
+
+  //outputDrawStream(socket);
 
 });
 
