@@ -5,10 +5,17 @@
     <title>Play AI Draw</title>
     <meta charset="utf-8">
     <link rel="stylesheet" type="text/css" href="play.css">
+    <link href="https://fonts.googleapis.com/css?family=Oxanium:400,600&display=swap" rel="stylesheet">
+    <script src="p5.min.js"></script>
+    <script src="p5.sound.min.js"></script>
 
 </head>
 
 <body>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.3.0/socket.io.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+    <script src="ml5.min.js"></script>
 
     <div class="main-wrapper">
         <div class="header">
@@ -18,16 +25,27 @@
         <div class="main">
             <div class="col-wrapper">
                 <div class="col" id="drawing-area-wrapper">
-                    <div id="drawing-area" >
+                    <p>Draw a elephantpig</p>
+                    <div id="drawing-area">
 
                     </div>
-    
+                    <p id="timer">Time left</p>
+
                 </div>
-    
+
                 <div class="col" id="chat-window">
-    
+                    <div id="message-wrapper">
+                        <p style="position: absolute; bottom: 0; width: 100;">some sample message <br> some even way way logner sample message for testing around <br> test</p>
+                    </div>
+                    <div id="input-wrapper">
+                        <input type="text" placeholder="guess here">
+                        <div id="submit-button">
+                            <p>SEND</p>
+
+                        </div>
+                    </div>
                 </div>
-    
+
             </div>
         </div>
 
@@ -36,6 +54,20 @@
 
         </div>
     </div>
+    <script>
+        $('#submit-button').on("click", () => {
+            console.log("message send");
+            $('#input-wrapper input').val("");
+        });
+
+        $('#input-wrapper input').on("keyup", (key) => {
+            if(key.which == 13){
+                key.preventDefault();
+                $('#submit-button').click();
+            }
+        });
+    </script>
+    <script src="sketch.js"></script>
 </body>
 
 </html>

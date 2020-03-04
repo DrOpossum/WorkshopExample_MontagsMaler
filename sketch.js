@@ -48,12 +48,13 @@ function modelReady() {
 //timer is also initialized here.
 function setup() {
   noLoop();
-  canvas = createCanvas(100, 100);
+  $('#drawing-area').height($('#drawing-area').width());
+  canvas = createCanvas($('#drawing-area').width(), $('#drawing-area').height());
+  canvas.parent('drawing-area');
   canvas.elt.style.pointerEvents = "none";
   background(255, 0, 0);
-  timerDiv = createDiv(timer);
-  timerDiv.style('font-size', '60pt');
-  
+  timerDiv = $("#timer");
+  timerDiv.text("Time left: " + timer + "ms");
   
   //Set mode of what to be drawn here:
   sketchRNN = ml5.sketchRNN('elephantpig', modelReady);
@@ -93,7 +94,6 @@ function Ml5StartDrawing() {
 function gotSketchStroke(error, stroke) {
   socket.emit('userPath', stroke);
   console.log(stroke);
-  draw();
   currentStroke = stroke;
 }
 
@@ -106,7 +106,7 @@ function draw() {
   if (timerStart && timer > 0) {
     timer -= 1000 / 60;
     timer = timer <= 0 ? 0 : timer;
-    timerDiv.html(int(timer));
+    timerDiv.text("Time left: " + int(timer) + "ms");
   }
 
   //if user ran out of time, SketchRNN takes over
