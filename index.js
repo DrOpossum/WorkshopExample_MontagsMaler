@@ -121,10 +121,11 @@ const models = [
   'everything',
 ];
 
+index = fs.readFileSync(__dirname + '/play.html');
 
 var app = http.createServer(function(req, res) {
     res.writeHead(200, {'Content-Type': 'text/html'});
-    res.end("");
+    res.end(index);
 });
 
 var io = require('socket.io').listen(app);
