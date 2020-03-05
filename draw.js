@@ -23,16 +23,9 @@ let canvas;
 //userPath array to start model
 let seedPath = [];
 
-var socket = io("http://192.168.1.161:3000")
-
-socket.on('draw', (msg) => {
-  console.log(msg)
-});
-
 //when the model is ready, return the loop and set the background to green.
 //the timeout is neccessary for idk what reasons but after 2h of bug fixing i also don't wanna know.
 function modelReady() {
-  loop();
   background(0, 255, 0);
   setTimeout(() => {
     canvas.mousePressed(userStartDrawing);
@@ -41,13 +34,12 @@ function modelReady() {
     canvas.elt.style.pointerEvents = "all";
     seedPath = [];
   }, 1);
-
 }
 
 //blocking loop until model is loaded as well as creating canvas and setting background to red.
 //timer is also initialized here.
-function setup() {
-  noLoop();
+function youDrawSetup(thing) {
+  document.getElementById("drawing-area").innerHTML = ""; 
   $('#drawing-area').height($('#drawing-area').width());
   canvas = createCanvas($('#drawing-area').width(), $('#drawing-area').height());
   canvas.parent('drawing-area');
@@ -57,7 +49,7 @@ function setup() {
   timerDiv.text("Time left: " + timer + "ms");
   
   //Set mode of what to be drawn here:
-  sketchRNN = ml5.sketchRNN('elephantpig', modelReady);
+  sketchRNN = ml5.sketchRNN(thing.replace(" ", "_"), modelReady);
 }
 
 //called after model loaded (ableToDraw) and the user clicks
@@ -75,6 +67,8 @@ function userStartDrawing() {
       y: y
     });
     background(255);
+    socket.off("userPath");
+    socket.off("userStart");
   }
 }
 
@@ -93,7 +87,6 @@ function Ml5StartDrawing() {
 //callback for setting returned stroke to global scope for use in draw()
 function gotSketchStroke(error, stroke) {
   socket.emit('userPath', stroke);
-  console.log(stroke);
   currentStroke = stroke;
 }
 
@@ -101,6 +94,7 @@ function gotSketchStroke(error, stroke) {
 function draw() {
   //setting general stroke weight
   strokeWeight(3);
+  console.log("draw loops");
 
   //if timer is allowed to start and bigger than zero, subtract ~16ms each frame or set to zero.
   if (timerStart && timer > 0) {
