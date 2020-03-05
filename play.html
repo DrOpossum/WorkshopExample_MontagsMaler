@@ -1,301 +1,305 @@
 <!DOCTYPE html>
 <html>
-
-<head>
+  <head>
     <title>Play AI Draw</title>
-    <meta charset="utf-8">
-    <link rel="stylesheet" type="text/css" href="/assets/play.css">
-    <link href="https://fonts.googleapis.com/css?family=Oxanium:400,600&display=swap" rel="stylesheet">
+    <meta charset="utf-8" />
+    <link rel="stylesheet" type="text/css" href="/assets/play.css" />
+    <link
+      href="https://fonts.googleapis.com/css?family=Oxanium:400,600&display=swap"
+      rel="stylesheet"
+    />
     <script src="/assets/p5.min.js"></script>
-</head>
+  </head>
 
-<body>
-
+  <body>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.3.0/socket.io.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
     <script src="/assets/ml5.min.js"></script>
 
     <div class="main-wrapper">
-        <div class="header">
-            <img id="logo" src="./assets/ai_draw_logo.png">
-        </div>
+      <div class="header">
+        <img id="logo" src="./assets/ai_draw_logo.png" />
+      </div>
 
-        <div class="main">
-            <div class="col-wrapper">
-                <div class="col" id="drawing-area-wrapper">
-                    <p id="instructions">Waiting for Players.</p>
-                    <div id="drawing-area">
+      <div class="main">
+        <div class="col-wrapper">
+          <div class="col" id="drawing-area-wrapper">
+            <p id="instructions">Waiting for Players.</p>
+            <div id="drawing-area"></div>
+            <p id="timer"></p>
+          </div>
 
-                    </div>
-                    <p id="timer"></p>
-
-                </div>
-
-                <div class="col" id="chat-window">
-                    <div id="message-wrapper">
-                        <p style="position: absolute; bottom: 0;"></p>
-                    </div>
-                    <div id="input-wrapper">
-                        <input type="text" placeholder="guess here">
-                        <div id="submit-button">
-                            <p>SEND</p>
-
-                        </div>
-                    </div>
-                </div>
-
+          <div class="col" id="chat-window">
+            <div id="message-wrapper">
+              <p style="position: absolute; bottom: 0;"></p>
             </div>
+            <div id="input-wrapper">
+              <input type="text" placeholder="guess here" />
+              <div id="submit-button">
+                <p>SEND</p>
+              </div>
+            </div>
+          </div>
         </div>
+      </div>
 
-        <div class="footer">
-            <p>This is just some test footer. Content to be added later.</p>
-
-        </div>
+      <div class="footer">
+        <p>This is just some test footer. Content to be added later.</p>
+      </div>
     </div>
     <script>
-        let socket = io("http://192.168.1.161:3000");
-        let timerCounter = 0;
-        let timerInterval;
+      let socket = io('https://' + window.location.host)
+      let timerCounter = 0
+      let timerInterval
 
-        socket.on("chat", (message) => {
-            $('#message-wrapper p').html($('#message-wrapper p').html() + "<br>" + message.name + ": " + message.msg);
-        });
+      socket.on('chat', message => {
+        $('#message-wrapper p').html(
+          $('#message-wrapper p').html() +
+            '<br>' +
+            message.name +
+            ': ' +
+            message.msg
+        )
+      })
 
-        socket.on("youDraw", (data) => {
-            console.log("DRAW");
-            $('#instructions').text("Draw a " + data.thing);
-            youDrawSetup(data.thing);
-        });
+      socket.on('youDraw', data => {
+        console.log('DRAW')
+        $('#instructions').text('Draw a ' + data.thing)
+        youDrawSetup(data.thing)
+      })
 
-        socket.on("youRedraw", (data) => {
-            console.log("REDRAW");
-            $('#instructions').text(data.drawer + " is drawing");
-            reDrawSetup();
-        });
+      socket.on('youRedraw', data => {
+        console.log('REDRAW')
+        $('#instructions').text(data.drawer + ' is drawing')
+        reDrawSetup()
+      })
 
-        socket.on("start", (duration) => {
-            console.log(socket.id);
-            timerCounter = duration.duration / 1000;
+      socket.on('start', duration => {
+        console.log(socket.id)
+        timerCounter = duration.duration / 1000
 
-            timerInterval = setInterval(() => {
-                $("#timer").text("Guessing time left: " + timerCounter);
-                timerCounter--;
-            }, 1000);
-        });
+        timerInterval = setInterval(() => {
+          $('#timer').text('Guessing time left: ' + timerCounter)
+          timerCounter--
+        }, 1000)
+      })
 
-        socket.on("stop", () => {
-            $("#timer").text("Time is over");
-            clearInterval(timerInterval);
-        });
+      socket.on('stop', () => {
+        $('#timer').text('Time is over')
+        clearInterval(timerInterval)
+      })
 
-        socket.on("reload", () => {
-            location.reload();
-        });
+      socket.on('reload', () => {
+        location.reload()
+      })
 
-        $('#submit-button').on("click", () => {
-            socket.emit("chat", {
-                msg: $('#input-wrapper input').val()
-            })
-            $('#input-wrapper input').val("");
-        });
+      $('#submit-button').on('click', () => {
+        socket.emit('chat', {
+          msg: $('#input-wrapper input').val()
+        })
+        $('#input-wrapper input').val('')
+      })
 
-        $('#input-wrapper input').on("keyup", (key) => {
-            if (key.which == 13) {
-                key.preventDefault();
-                $('#submit-button').click();
-            }
-        });
+      $('#input-wrapper input').on('keyup', key => {
+        if (key.which == 13) {
+          key.preventDefault()
+          $('#submit-button').click()
+        }
+      })
 
-
-        /*
+      /*
 start variables and declarations.
 */
 
-        let sketchRNN;
-        //Path object returned from ML5
-        let currentStroke;
-        //drawing state of ML5
-        let nextPen = 'down';
-        //pen position
-        let x, y;
-        //timer output
-        let timerDiv;
-        //timer running?
-        let timerStart = false;
-        //timer start value
-        let timer = 1000;
-        //is the user drawing in the beginning
-        let userDrawing = false;
-        let ableToDraw = false;
-        //canvas to be drawn onto
-        let canvas;
-        //userPath array to start model
-        let seedPath = [];
+      let sketchRNN
+      //Path object returned from ML5
+      let currentStroke
+      //drawing state of ML5
+      let nextPen = 'down'
+      //pen position
+      let x, y
+      //timer output
+      let timerDiv
+      //timer running?
+      let timerStart = false
+      //timer start value
+      let timer = 1000
+      //is the user drawing in the beginning
+      let userDrawing = false
+      let ableToDraw = false
+      //canvas to be drawn onto
+      let canvas
+      //userPath array to start model
+      let seedPath = []
 
-        let youDraw = false;
+      let youDraw = false
 
-        function setup() {
-            noLoop();
+      function setup () {
+        noLoop()
+      }
+
+      //blocking loop until model is loaded as well as creating canvas and setting background to red.
+      //timer is also initialized here.
+      function youDrawSetup (thing) {
+        youDraw = true
+        document.getElementById('drawing-area').innerHTML = ''
+        $('#drawing-area').height($('#drawing-area').width())
+        canvas = createCanvas(
+          $('#drawing-area').width(),
+          $('#drawing-area').height()
+        )
+        canvas.parent('drawing-area')
+        canvas.elt.style.pointerEvents = 'none'
+        background(255, 0, 0)
+        timerDiv = $('#timer')
+        timerDiv.text('Time left: ' + timer + 'ms')
+
+        socket.off('userPath')
+        socket.off('userStart')
+
+        //Set mode of what to be drawn here:
+        sketchRNN = ml5.sketchRNN(thing.replace(' ', '_'), modelReady)
+      }
+
+      //blocking loop until model is loaded as well as creating reCanvas and setting background to red.
+      //timer is also initialized here
+      function reDrawSetup () {
+        document.getElementById('drawing-area').innerHTML = ''
+        $('#drawing-area').height($('#drawing-area').width())
+        reCanvas = createCanvas(
+          $('#drawing-area').width(),
+          $('#drawing-area').height()
+        )
+        reCanvas.parent('drawing-area')
+        background(255)
+
+        x = width / 2
+        y = height / 2
+
+        nextPen = 'down'
+        currentStroke = null
+
+        socket.on('userPath', path => {
+          currentStroke = path
+          draw()
+        })
+
+        socket.on('userStart', cords => {
+          x = cords.x
+          y = cords.y
+        })
+      }
+
+      //when the model is ready, return the loop and set the background to green.
+      //the timeout is neccessary for idk what reasons but after 2h of bug fixing i also don't wanna know.
+      function modelReady () {
+        background(0, 255, 0)
+        setTimeout(() => {
+          canvas.mousePressed(userStartDrawing)
+          canvas.mouseReleased(Ml5StartDrawing)
+          ableToDraw = true
+          canvas.elt.style.pointerEvents = 'all'
+          seedPath = []
+        }, 1)
+        loop()
+      }
+
+      //called after model loaded (ableToDraw) and the user clicks
+      //starts the timer and sets origin of drawing
+      //making background white
+      function userStartDrawing () {
+        if (ableToDraw) {
+          ableToDraw = false
+          userDrawing = true
+          timerStart = true
+          x = mouseX
+          y = mouseY
+          socket.emit('userStart', {
+            x: x,
+            y: y
+          })
+          background(255)
+        }
+      }
+
+      //after user has drawn (seedpath length > 0)
+      //generates first path of finished drawing
+      function Ml5StartDrawing () {
+        if (seedPath.length > 0) {
+          userDrawing = false
+          timerStart = false
+          ableToDraw = false
+          sketchRNN.generate(seedPath, gotSketchStroke)
+        }
+      }
+
+      //callback for setting returned stroke to global scope for use in draw()
+      function gotSketchStroke (error, stroke) {
+        socket.emit('userPath', stroke)
+        currentStroke = stroke
+      }
+
+      function draw () {
+        //setting general stroke weight
+        strokeWeight(3)
+
+        //if timer is allowed to start and bigger than zero, subtract ~16ms each frame or set to zero.
+        if (timerStart && timer > 0) {
+          timer -= 1000 / 60
+          timer = timer <= 0 ? 0 : timer
+          timerDiv.text('Time left: ' + int(timer) + 'ms')
         }
 
-        //blocking loop until model is loaded as well as creating canvas and setting background to red.
-        //timer is also initialized here.
-        function youDrawSetup(thing) {
-            youDraw = true;
-            document.getElementById("drawing-area").innerHTML = "";
-            $('#drawing-area').height($('#drawing-area').width());
-            canvas = createCanvas($('#drawing-area').width(), $('#drawing-area').height());
-            canvas.parent('drawing-area');
-            canvas.elt.style.pointerEvents = "none";
-            background(255, 0, 0);
-            timerDiv = $("#timer");
-            timerDiv.text("Time left: " + timer + "ms");
-
-            socket.off('userPath');
-            socket.off('userStart');
-
-            //Set mode of what to be drawn here:
-            sketchRNN = ml5.sketchRNN(thing.replace(" ", "_"), modelReady);
+        //if user ran out of time, SketchRNN takes over
+        if (timer == 0 && timerStart) {
+          Ml5StartDrawing()
         }
 
-        //blocking loop until model is loaded as well as creating reCanvas and setting background to red.
-        //timer is also initialized here
-        function reDrawSetup() {
-            document.getElementById("drawing-area").innerHTML = "";
-            $('#drawing-area').height($('#drawing-area').width());
-            reCanvas = createCanvas($('#drawing-area').width(), $('#drawing-area').height());
-            reCanvas.parent('drawing-area');
-            background(255);
-
-            x = width / 2;
-            y = height / 2;
-
-            nextPen = "down";
-            currentStroke = null;
-
-            socket.on('userPath', (path) => {
-                currentStroke = path;
-                draw();
-            });
-
-            socket.on('userStart', (cords) => {
-                x = cords.x;
-                y = cords.y;
-            });
+        //if user has time and started drawing make a stroke object with position change.
+        //draw line and update pen position with x, y
+        //store position change in array
+        if (userDrawing && timer > 0) {
+          let userPath = {
+            dx: mouseX - pmouseX,
+            dy: mouseY - pmouseY,
+            pen: 'down'
+          }
+          stroke(0, 0, 255)
+          line(x, y, x + userPath.dx, y + userPath.dy)
+          x += userPath.dx
+          y += userPath.dy
+          socket.emit('userPath', userPath)
+          seedPath.push(userPath)
         }
 
-        //when the model is ready, return the loop and set the background to green.
-        //the timeout is neccessary for idk what reasons but after 2h of bug fixing i also don't wanna know.
-        function modelReady() {
-            background(0, 255, 0);
-            setTimeout(() => {
-                canvas.mousePressed(userStartDrawing);
-                canvas.mouseReleased(Ml5StartDrawing);
-                ableToDraw = true;
-                canvas.elt.style.pointerEvents = "all";
-                seedPath = [];
-            }, 1);
-            loop();
+        //if nextPen == "end" the model has come to an end and the sketch can be stopped
+        if (nextPen == 'end') {
+          if (youDraw) {
+            console.log('test')
+            socket.emit('modelFinished', {})
+          }
+          noLoop()
+          return
         }
 
-        //called after model loaded (ableToDraw) and the user clicks
-        //starts the timer and sets origin of drawing
-        //making background white
-        function userStartDrawing() {
-            if (ableToDraw) {
-                ableToDraw = false;
-                userDrawing = true;
-                timerStart = true;
-                x = mouseX;
-                y = mouseY;
-                socket.emit('userStart', {
-                    x: x,
-                    y: y
-                });
-                background(255);
-            }
+        //if a stroke was returned by the model, draw it onto the screen when the state is down
+        //update x,y and generate next stroke and update penMode
+        if (currentStroke) {
+          if (nextPen == 'down') {
+            stroke(0)
+            line(x, y, x + currentStroke.dx, y + currentStroke.dy)
+          }
+
+          x += currentStroke.dx
+          y += currentStroke.dy
+
+          nextPen = currentStroke.pen
+          currentStroke = null
+          if (youDraw) {
+            sketchRNN.generate(gotSketchStroke)
+          }
         }
-
-        //after user has drawn (seedpath length > 0)
-        //generates first path of finished drawing
-        function Ml5StartDrawing() {
-            if (seedPath.length > 0) {
-                userDrawing = false;
-                timerStart = false;
-                ableToDraw = false;
-                sketchRNN.generate(seedPath, gotSketchStroke);
-            }
-        }
-
-        //callback for setting returned stroke to global scope for use in draw()
-        function gotSketchStroke(error, stroke) {
-            socket.emit('userPath', stroke);
-            currentStroke = stroke;
-        }
-
-
-        function draw() {
-            //setting general stroke weight
-            strokeWeight(3);
-
-            //if timer is allowed to start and bigger than zero, subtract ~16ms each frame or set to zero.
-            if (timerStart && timer > 0) {
-                timer -= 1000 / 60;
-                timer = timer <= 0 ? 0 : timer;
-                timerDiv.text("Time left: " + int(timer) + "ms");
-            }
-
-            //if user ran out of time, SketchRNN takes over
-            if (timer == 0 && timerStart) {
-                Ml5StartDrawing();
-            }
-
-            //if user has time and started drawing make a stroke object with position change.
-            //draw line and update pen position with x, y
-            //store position change in array
-            if (userDrawing && timer > 0) {
-                let userPath = {
-                    dx: mouseX - pmouseX,
-                    dy: mouseY - pmouseY,
-                    pen: 'down'
-                };
-                stroke(0, 0, 255);
-                line(x, y, x + userPath.dx, y + userPath.dy);
-                x += userPath.dx;
-                y += userPath.dy;
-                socket.emit('userPath', userPath);
-                seedPath.push(userPath);
-            }
-
-            //if nextPen == "end" the model has come to an end and the sketch can be stopped
-            if (nextPen == 'end') {
-                if(youDraw){
-                    console.log("test");
-                    socket.emit("modelFinished", {});
-                }
-                noLoop();
-                return;
-            }
-
-            //if a stroke was returned by the model, draw it onto the screen when the state is down
-            //update x,y and generate next stroke and update penMode
-            if (currentStroke) {
-                if (nextPen == 'down') {
-                    stroke(0);
-                    line(x, y, x + currentStroke.dx, y + currentStroke.dy);
-                }
-
-                x += currentStroke.dx;
-                y += currentStroke.dy;
-
-                nextPen = currentStroke.pen;
-                currentStroke = null;
-                if (youDraw) {
-                    sketchRNN.generate(gotSketchStroke);
-                }
-            }
-        }
+      }
     </script>
-</body>
-
+  </body>
 </html>
