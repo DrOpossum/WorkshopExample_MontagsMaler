@@ -80,7 +80,7 @@ body, html{
     margin-top: 80px;
     margin-bottom: 80px;
     background-color: #1F18DA;
-    border-radius: 40px 40px 0 0;
+    border-radius: 10px;
     display: flex;
     flex-direction: column;
     color: #FFFFFF;
@@ -91,6 +91,7 @@ body, html{
     margin: 0 30px;
     position: relative;
     flex-grow: 1;
+    word-break: break-word;
 }
 
 #input-wrapper{
