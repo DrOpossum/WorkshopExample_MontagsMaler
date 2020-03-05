@@ -1,0 +1,136 @@
+body, html{
+    margin: 0;
+    border: none;
+    padding: 0;
+    height: 100%;
+    font-family: Oxanium;
+}
+
+#chat-window br{
+    content: " " !important;
+    display: block !important;
+    height: 10px !important;
+}
+
+.main-wrapper{
+    display: flex;
+    flex-flow: column;
+    height: 100%;
+}
+
+.header{
+    flex: 0 1 auto;
+}
+
+.main{
+    flex: 1 1 auto;
+    display: flex;
+    flex-flow: column;
+    padding: 30px 0px 20px 0px;
+}
+
+.footer{
+    float: 0 1 40px;
+}
+
+.col-wrapper{
+    display: flex;
+    justify-content: space-evenly;
+    height: 100%;
+}
+
+.col{
+    margin: 0 100px;
+    max-width: 400px;
+    flex-basis: 40%;
+    flex-grow: 0;
+}
+
+#logo{
+    height: 6rem;
+    display: block;
+    margin-top: 20px;
+    margin-left: 40px;
+}
+
+#drawing-area-wrapper{
+    display: flex;
+    flex-direction: column;
+    text-align: center;
+    justify-content: center;
+}
+
+#drawing-area-wrapper p {
+    font-size: 2rem;
+}
+
+#drawing-area{
+    display: block;
+    width: 100%;
+    border-radius: 26px;
+    background-color: rgba(6, 21, 47, 0);
+}
+
+#drawing-area canvas{
+    border-radius: 25px;
+    box-shadow: 0 20px 60px rgba(6, 21, 47, 0.28);
+}
+
+#chat-window{
+    margin-top: 80px;
+    margin-bottom: 80px;
+    background-color: #1F18DA;
+    border-radius: 40px 40px 0 0;
+    display: flex;
+    flex-direction: column;
+    color: #FFFFFF;
+    overflow: hidden;
+}
+
+#message-wrapper{
+    margin: 0 30px;
+    position: relative;
+    flex-grow: 1;
+}
+
+#input-wrapper{
+    margin: 10px;
+    padding: 5px;
+    display: flex;
+    align-items: center;
+}
+
+#input-wrapper input{
+    flex-grow: 1;
+    flex-shrink: 1;
+    font-size: 1.3rem;
+    background: none;
+    border-width: 0 0 2px 0;
+    border-color: #FFFFFF;
+    color: #FFFFFF;
+    height: fit-content;
+}
+
+#input-wrapper input::placeholder{
+    color: rgba(255, 255, 255, 0.75);
+}
+
+#input-wrapper input:focus{
+    outline: none;
+}
+
+#submit-button{
+    width: 120px;
+    height: 3rem;
+    flex-grow: 0;
+    margin-left: 20px;
+    background-color: #FFFFFF;
+    border-radius: 10px;
+}
+
+#submit-button p{
+    color: black;
+    text-align: center;
+    font-weight: 700;
+    user-select: none;
+}
