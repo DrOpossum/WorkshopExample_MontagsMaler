@@ -1,8 +1,11 @@
-const https = require('https');
+const https = require('https')
 var http = require('http')
-var io = require('socket.io').listen(http);
-const fs = require('fs');
-var random_name = require('node-random-name');
+var io = require('socket.io').listen(http)
+const fs = require('fs')
+const url = require('url')
+const path = require('path')
+
+var random_name = require('node-random-name')
 
 const models = [
   'alarm clock',
@@ -118,10 +121,10 @@ const models = [
   'windmill',
   'yoga',
   'yogabicycle',
-  'everything',
-];
+  'everything'
+]
 
-index = fs.readFileSync(__dirname + '/play.html');
+index = fs.readFileSync(__dirname + '/play.html')
 
 const mimeType = {
   '.ico': 'image/x-icon',
@@ -138,131 +141,141 @@ const mimeType = {
   '.zip': 'application/zip',
   '.doc': 'application/msword',
   '.eot': 'application/vnd.ms-fontobject',
-  '.ttf': 'application/x-font-ttf',
-};
+  '.ttf': 'application/x-font-ttf'
+}
 
 var app = http.createServer(function (req, res) {
-  console.log(`${req.method} ${req.url}`);
+  const parsedUrl = url.parse(req.url)
 
-  const parsedUrl = url.parse(req.url);
-
-  const sanitizePath = path.normalize(parsedUrl.pathname).replace(/^(\.\.[\/\\])+/, '');
-  let pathname = path.join(__dirname, sanitizePath);
+  const sanitizePath = path
+    .normalize(parsedUrl.pathname)
+    .replace(/^(\.\.[\/\\])+/, '')
+  let pathname = path.join(__dirname, sanitizePath)
 
   fs.exists(pathname, function (exist) {
-    if(!exist) {
-      res.statusCode = 404;
-      res.end(`File ${pathname} not found!`);
-      return;
+    if (!exist) {
+      res.statusCode = 404
+      res.end(`File ${pathname} not found!`)
+      return
     }
 
     if (fs.statSync(pathname).isDirectory()) {
-      pathname += '/play.html';
+      pathname += '/play.html'
     }
 
-    fs.readFile(pathname, function(err, data){
-      if(err){
-        res.statusCode = 500;
-        res.end(`Error getting the file: ${err}.`);
+    fs.readFile(pathname, function (err, data) {
+      if (err) {
+        res.statusCode = 500
+        res.end(`Error getting the file: ${err}.`)
       } else {
-        const ext = path.parse(pathname).ext;
-        res.setHeader('Content-type', mimeType[ext] || 'text/plain' );
-        res.end(data);
+        const ext = path.parse(pathname).ext
+        res.setHeader('Content-type', mimeType[ext] || 'text/plain')
+        res.end(data)
       }
-    });
-  });
-
-
+    })
+  })
 })
 
-var io = require('socket.io').listen(app);
+var io = require('socket.io').listen(app)
 
 // --- Server Setup --- //
 
-let c = 0;
+let c = 0
 
-var points = [];
-var users = [];
-var thingToDraw;
-var drawingUser;
-var running = false;
+var points = []
+var users = []
+var thingToDraw
+var drawingUser
+var running = false
 
-function removeItem(array, item){
-    for(var i in array){
-        if(array[i]==item){
-            array.splice(i,1);
-            break;
-        }
+function removeItem (array, item) {
+  for (var i in array) {
+    if (array[i] == item) {
+      array.splice(i, 1)
+      break
     }
+  }
 }
 
-function clearStats() {
-  points = [];
-  users = [];
-  thingToDraw = null;
-  drawingUser = null;
-  running = false;
+function clearStats () {
+  points = []
+  users = []
+  thingToDraw = null
+  drawingUser = null
+  running = false
 }
 
-io.on('connection', function(socket){
-  users.push(socket.id);
-  if(users.length == 3){
-    if(running) return;
-      running = true;
-      var startTimer = setTimeout(function(){
-        thingToDraw = models[Math.floor(Math.random() * models.length)];
-        drawingUser = users[Math.floor(Math.random() * users.length)];
-        io.to(drawingUser).emit('youDraw', {thing: thingToDraw})
-        io.emit('chat', { name: "System", msg: random_name({ first: true, seed: drawingUser }) + " is now drawing." })
-        for (var i = 0; i < users.length; i++) {
-          if(users[i] != drawingUser){
-            socket.to(users[i]).emit('youRedraw', {drawer: random_name({ first: true, seed: drawingUser })})
-          }
+io.on('connection', function (socket) {
+  users.push(socket.id)
+  if (users.length == 3) {
+    if (running) return
+    running = true
+    var startTimer = setTimeout(function () {
+      thingToDraw = models[Math.floor(Math.random() * models.length)]
+      drawingUser = users[Math.floor(Math.random() * users.length)]
+      io.to(drawingUser).emit('youDraw', { thing: thingToDraw })
+      io.emit('chat', {
+        name: 'System',
+        msg:
+          random_name({ first: true, seed: drawingUser }) + ' is now drawing.'
+      })
+      for (var i = 0; i < users.length; i++) {
+        if (users[i] != drawingUser) {
+          socket.to(users[i]).emit('youRedraw', {
+            drawer: random_name({ first: true, seed: drawingUser })
+          })
         }
-        socket.on('modelFinished', function(){
-          io.emit('start', {duration: 10000})
-          var stopTimer = setTimeout(function(){
-            io.emit('stop', {})
-            io.emit('chat', { name: "System", msg: "It was a " +thingToDraw + "!" })
-          }, 10000);
-        })
-      }, 3000)
+      }
+      socket.on('modelFinished', function () {
+        io.emit('start', { duration: 10000 })
+        var stopTimer = setTimeout(function () {
+          io.emit('stop', {})
+          io.emit('chat', {
+            name: 'System',
+            msg: 'It was a ' + thingToDraw + '!'
+          })
+        }, 10000)
+      })
+    }, 3000)
   }
 
-  socket.on('disconnect', function(){
-    removeItem(users,socket.id);
-    if(users.length == 2 && running){
+  socket.on('disconnect', function () {
+    removeItem(users, socket.id)
+    if (users.length == 2 && running) {
       clearStats()
-      if(typeof startTimer !== "undefined") clearTimeout(startTimer)
-      if(typeof stopTimer !== "undefined") clearTimeout(stopTimer)
-      io.emit("reload", {})
+      if (typeof startTimer !== 'undefined') clearTimeout(startTimer)
+      if (typeof stopTimer !== 'undefined') clearTimeout(stopTimer)
+      io.emit('reload', {})
     }
-  });
+  })
 
-  socket.on('userPath', function(data){
+  socket.on('userPath', function (data) {
     //console.log("UserPath", data, c++)
     io.emit('userPath', data)
-  });
+  })
 
-  socket.on('userStart', function(data){
+  socket.on('userStart', function (data) {
     //console.log("userStart", data)
     io.emit('userStart', data)
-  });
+  })
 
-  socket.on('chat', function(data){
-    if(data.msg.toLowerCase() == thingToDraw && socket.id != drawingUser){
-      socket.emit('chat', { name: "System", msg: "You guessed corretly!"})
-      socket.broadcast.emit('chat', { name: "System", msg: random_name({ first: true, seed: socket.id }) + " guessed corretly!"})
+  socket.on('chat', function (data) {
+    if (data.msg.toLowerCase() == thingToDraw && socket.id != drawingUser) {
+      socket.emit('chat', { name: 'System', msg: 'You guessed corretly!' })
+      socket.broadcast.emit('chat', {
+        name: 'System',
+        msg:
+          random_name({ first: true, seed: socket.id }) + ' guessed corretly!'
+      })
     } else {
-      io.emit('chat', { name: random_name({ first: true, seed: socket.id }), msg: data.msg })
+      io.emit('chat', {
+        name: random_name({ first: true, seed: socket.id }),
+        msg: data.msg
+      })
     }
-  });
-
-
+  })
 
   //outputDrawStream(socket);
+})
 
-});
-
-app.use(express.static('assets'));
-app.listen(process.env.PORT || 3000);
+app.listen(process.env.PORT || 3000)
