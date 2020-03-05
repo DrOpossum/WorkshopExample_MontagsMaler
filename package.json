@@ -9,12 +9,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "argparse": "^1.0.10",
     "express": "^4.15.2",
     "node-random-name": "^1.0.1",
-    "paper-jsdom": "^0.12.4",
-    "sketchrnn": "^0.1.1",
-    "socket.io": "^2.3.0",
-    "static-eval": ">=2.0.0"
+    "socket.io": "^2.3.0"
   }
 }
